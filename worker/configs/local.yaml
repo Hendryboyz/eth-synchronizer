@@ -1,6 +1,12 @@
 redis:
   host: localhost
   port: 6379
+mysql:
+  host: localhost
+  port: 3306
+  db: ethereum
+  username: poc_user
+  pwd: secret
 scans:
   n: 20
   nodeEndpoint: https://data-seed-prebsc-2-s3.binance.org:8545/

@@ -11,10 +11,12 @@ import (
 
 	"github.com/Hendryboyz/eth-synchronizer/configs"
 	"github.com/Hendryboyz/eth-synchronizer/context"
+	"github.com/Hendryboyz/eth-synchronizer/db"
 )
 
 func main() {
 	configs.InitConfig("local")
+	db.InitDatabase()
 	redisPool := initCachePool(configs.GetConfig())
 	pool := work.NewWorkerPool(context.Context{}, 20, "namespace", redisPool)
 	pool.PeriodicallyEnqueue("0 * * * * *", "sync_blocks")
