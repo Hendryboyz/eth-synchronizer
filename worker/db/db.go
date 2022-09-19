@@ -15,7 +15,7 @@ var (
 	err error
 )
 
-func InitDatabase() {
+func Init() {
 	connectionString := generateConnectionString()
 	db, err = gorm.Open(mysql.Open(connectionString), &gorm.Config{})
 	if err != nil {

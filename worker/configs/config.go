@@ -8,7 +8,7 @@ import (
 
 var config *viper.Viper
 
-func InitConfig(environment string) {
+func Init(environment string) {
 	config = viper.New()
 	config.SetConfigType("yaml")
 	config.SetConfigName(environment)
