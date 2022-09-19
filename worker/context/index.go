@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"sync"
 
 	"github.com/Hendryboyz/eth-synchronizer/configs"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -31,13 +32,17 @@ func (c *Context) SyncBlocks(job *work.Job) error {
 		return err
 	}
 	n := config.GetInt64("scans.n")
+	wg := new(sync.WaitGroup)
 	for i := int64(blockNum) - n; i <= int64(blockNum); i++ {
-		doSync(client, i)
+		wg.Add(1)
+		go doSync(client, i, wg)
 	}
+	wg.Wait()
 	return nil
 }
 
-func doSync(client *ethclient.Client, blockNum int64) {
+func doSync(client *ethclient.Client, blockNum int64, wg *sync.WaitGroup) {
+	defer wg.Done()
 	fmt.Println("Current block number is :", blockNum)
 	block, err := client.BlockByNumber(
 		context.Background(),
