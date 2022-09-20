@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strconv"
 	"sync"
+	"time"
 
 	"github.com/Hendryboyz/eth-synchronizer/configs"
+	"github.com/Hendryboyz/eth-synchronizer/db"
+	"github.com/Hendryboyz/eth-synchronizer/models"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gocraft/work"
+	"gorm.io/gorm/clause"
 )
 
 type Context struct {
@@ -17,7 +21,7 @@ type Context struct {
 }
 
 func (c *Context) Log(job *work.Job, next work.NextMiddlewareFunc) error {
-	fmt.Println("Starting job:", job.Name)
+	fmt.Printf("Starting job[%s]\n", job.Name)
 	return next()
 }
 
@@ -31,6 +35,8 @@ func (c *Context) SyncBlocks(job *work.Job) error {
 	if err != nil {
 		return err
 	}
+	syncTime := time.Now()
+	fmt.Printf("Start sync block at %s\n", syncTime)
 	n := config.GetInt64("scans.n")
 	wg := new(sync.WaitGroup)
 	for i := int64(blockNum) - n; i <= int64(blockNum); i++ {
@@ -38,12 +44,12 @@ func (c *Context) SyncBlocks(job *work.Job) error {
 		go doSync(client, i, wg)
 	}
 	wg.Wait()
+	fmt.Printf("Finish sync at %s\n", syncTime)
 	return nil
 }
 
 func doSync(client *ethclient.Client, blockNum int64, wg *sync.WaitGroup) {
 	defer wg.Done()
-	fmt.Println("Current block number is :", blockNum)
 	block, err := client.BlockByNumber(
 		context.Background(),
 		big.NewInt(blockNum),
@@ -52,12 +58,21 @@ func doSync(client *ethclient.Client, blockNum int64, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	blockInfo := make(map[string]string)
-	blockInfo["num"] = block.Number().String()
-	blockInfo["hash"] = block.Hash().String()
-	blockInfo["time"] = strconv.FormatUint(block.Time(), 10)
-	blockInfo["parentHash"] = block.ParentHash().String()
-	fmt.Println(blockInfo)
+	blockEntity := createBlockEntity(block)
+	db := db.GetDBInstance()
+	db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "number"}},
+		UpdateAll: true,
+	}).Create(&blockEntity)
+}
+
+func createBlockEntity(block *types.Block) models.Blocks {
+	return models.Blocks{
+		Number:     block.Number().Int64(),
+		Hash:       block.Hash().String(),
+		ParentHash: block.ParentHash().String(),
+		Time:       time.Unix(int64(block.Time()), 0),
+	}
 }
 
 func (c *Context) Export(job *work.Job) error {
