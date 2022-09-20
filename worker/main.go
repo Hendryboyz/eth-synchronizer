@@ -17,6 +17,7 @@ import (
 func main() {
 	configs.Init("local")
 	db.Init()
+	db.AutoMigrate("local")
 	redisPool := initCachePool(configs.GetConfig())
 	pool := work.NewWorkerPool(context.Context{}, 20, "namespace", redisPool)
 	pool.PeriodicallyEnqueue("0 * * * * *", "sync_blocks")

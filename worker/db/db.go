@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/Hendryboyz/eth-synchronizer/configs"
+	"github.com/Hendryboyz/eth-synchronizer/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -39,4 +40,16 @@ func generateConnectionString() string {
 
 func GetDBInstance() *gorm.DB {
 	return db
+}
+
+func AutoMigrate(environment string) {
+	if environment != "local" || db == nil {
+		return
+	}
+
+	err := db.AutoMigrate(&models.Blocks{})
+	if err != nil {
+		log.Fatal("Migrate database fail")
+	}
+	log.Println("Database migration done")
 }
