@@ -16,7 +16,7 @@ var (
 	err error
 )
 
-func Init() {
+func Init() *gorm.DB {
 	connectionString := generateConnectionString()
 	db, err = gorm.Open(mysql.Open(connectionString), &gorm.Config{})
 	if err != nil {
@@ -24,6 +24,7 @@ func Init() {
 	} else {
 		log.Println("DB connected")
 	}
+	return db
 }
 
 func generateConnectionString() string {

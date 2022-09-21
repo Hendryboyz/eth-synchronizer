@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gocraft/work"
-	"gorm.io/gorm/clause"
 )
 
 type Context struct {
@@ -59,11 +58,8 @@ func doSync(client *ethclient.Client, blockNum int64, wg *sync.WaitGroup) {
 	}
 
 	blockEntity := createBlockEntity(block)
-	db := db.GetDBInstance()
-	db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "number"}},
-		UpdateAll: true,
-	}).Create(&blockEntity)
+	blockRepo := db.BlocksRepository{DB: db.GetDBInstance()}
+	blockRepo.CreateBlock(blockEntity)
 }
 
 func createBlockEntity(block *types.Block) models.Blocks {
